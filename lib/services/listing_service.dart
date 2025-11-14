@@ -92,27 +92,40 @@ class ListingService {
     return await ref.getDownloadURL();
   }
 
-  // Get user's listings
+// Get user's listings
   Future<List<ListingModel>> getUserListings(String userId) async {
     try {
+      print('📋 ListingService: Fetching listings for userId: $userId');
+
       final querySnapshot = await _firestore
           .collection('listings')
           .where('ownerId', isEqualTo: userId)
           .orderBy('createdAt', descending: true)
           .get();
 
-      return querySnapshot.docs
-          .map((doc) => ListingModel.fromMap(doc.data(), doc.id))
+      print('📋 ListingService: Found ${querySnapshot.docs.length} listings');
+
+      final listings = querySnapshot.docs
+          .map((doc) {
+        print('📋 Document ID: ${doc.id}');
+        print('📋 Document data: ${doc.data()}');
+        return ListingModel.fromMap(doc.data(), doc.id);
+      })
           .toList();
+
+      print('📋 ListingService: Returning ${listings.length} parsed listings');
+      return listings;
     } catch (e) {
-      print('❌ Error fetching user listings: $e');
+      print('❌ ListingService: Error fetching user listings: $e');
       return [];
     }
   }
 
-  // Get all approved listings
+// Get all approved listings
   Future<List<ListingModel>> getAllListings() async {
     try {
+      print('🏡 ListingService: Fetching all approved listings');
+
       final querySnapshot = await _firestore
           .collection('listings')
           .where('status', isEqualTo: 'approved')
@@ -120,11 +133,19 @@ class ListingService {
           .limit(20)
           .get();
 
-      return querySnapshot.docs
-          .map((doc) => ListingModel.fromMap(doc.data(), doc.id))
+      print('🏡 ListingService: Found ${querySnapshot.docs.length} approved listings');
+
+      final listings = querySnapshot.docs
+          .map((doc) {
+        print('🏡 Document ID: ${doc.id}');
+        return ListingModel.fromMap(doc.data(), doc.id);
+      })
           .toList();
+
+      print('🏡 ListingService: Returning ${listings.length} parsed listings');
+      return listings;
     } catch (e) {
-      print('❌ Error fetching listings: $e');
+      print('❌ ListingService: Error fetching all listings: $e');
       return [];
     }
   }

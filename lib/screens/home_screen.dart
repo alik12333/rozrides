@@ -16,8 +16,13 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    print('🏡 HomeScreen: initState called');
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<ListingProvider>().loadAllListings();
+      print('🏡 HomeScreen: Loading all listings...');
+      final listingProvider = context.read<ListingProvider>();
+      listingProvider.loadAllListings().then((_) {
+        print('🏡 HomeScreen: Loaded ${listingProvider.allListings.length} listings');
+      });
     });
   }
 

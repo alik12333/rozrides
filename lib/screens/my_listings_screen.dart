@@ -16,17 +16,25 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
   @override
   void initState() {
     super.initState();
+    print('🏠 MyListingsScreen: initState called');
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      print('🏠 MyListingsScreen: postFrameCallback triggered');
       _loadListings();
     });
   }
 
   Future<void> _loadListings() async {
+    print('🏠 MyListingsScreen: _loadListings called');
+
     final authProvider = context.read<AuthProvider>();
     final listingProvider = context.read<ListingProvider>();
 
     if (authProvider.currentUser != null) {
+      print('🏠 MyListingsScreen: User ID = ${authProvider.currentUser!.id}');
       await listingProvider.loadMyListings(authProvider.currentUser!.id);
+      print('🏠 MyListingsScreen: Listings loaded = ${listingProvider.myListings.length}');
+    } else {
+      print('❌ MyListingsScreen: No current user found!');
     }
   }
 
