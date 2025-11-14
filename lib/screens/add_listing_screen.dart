@@ -7,6 +7,7 @@ import '../providers/auth_provider.dart';
 import '../providers/listing_provider.dart';
 import '../widgets/custom_button.dart';
 import '../widgets/custom_text_field.dart';
+import 'listing_success_screen.dart';
 
 class AddListingScreen extends StatefulWidget {
   const AddListingScreen({super.key});
@@ -20,24 +21,35 @@ class _AddListingScreenState extends State<AddListingScreen> {
 
   // Controllers
   final TextEditingController _carNameController = TextEditingController();
+  final TextEditingController _brandController = TextEditingController();
   final TextEditingController _modelController = TextEditingController();
   final TextEditingController _yearController = TextEditingController();
   final TextEditingController _priceController = TextEditingController();
   final TextEditingController _engineSizeController = TextEditingController();
+  final TextEditingController _mileageController = TextEditingController();
+  final TextEditingController _descriptionController = TextEditingController();
 
   // State
+  String _fuelType = 'Petrol';
+  String _transmission = 'Manual';
   bool _withDriver = false;
   bool _hasInsurance = false;
   List<File> _images = [];
   bool _isSubmitting = false;
 
+  final List<String> _fuelTypes = ['Petrol', 'Diesel', 'Hybrid', 'Electric', 'CNG'];
+  final List<String> _transmissions = ['Manual', 'Automatic'];
+
   @override
   void dispose() {
     _carNameController.dispose();
+    _brandController.dispose();
     _modelController.dispose();
     _yearController.dispose();
     _priceController.dispose();
     _engineSizeController.dispose();
+    _mileageController.dispose();
+    _descriptionController.dispose();
     super.dispose();
   }
 
@@ -47,9 +59,29 @@ class _AddListingScreenState extends State<AddListingScreen> {
 
     if (pickedFiles.isNotEmpty) {
       setState(() {
-        _images = pickedFiles.map((file) => File(file.path)).toList();
+        // Add new images to existing list (max 10 total)
+        for (var file in pickedFiles) {
+          if (_images.length < 10) {
+            _images.add(File(file.path));
+          }
+        }
       });
+
+      if (pickedFiles.length + _images.length > 10) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Maximum 10 images allowed'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
     }
+  }
+
+  void _removeImage(int index) {
+    setState(() {
+      _images.removeAt(index);
+    });
   }
 
   Future<void> _submitListing() async {
@@ -60,6 +92,16 @@ class _AddListingScreenState extends State<AddListingScreen> {
         const SnackBar(
           content: Text('Please add at least one image'),
           backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (_images.length < 3) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please add at least 3 images for better visibility'),
+          backgroundColor: Colors.orange,
         ),
       );
       return;
@@ -88,17 +130,25 @@ class _AddListingScreenState extends State<AddListingScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const Center(
-        child: Card(
-          child: Padding(
-            padding: EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 16),
-                Text('Creating your listing...'),
-              ],
+      builder: (context) => WillPopScope(
+        onWillPop: () async => false,
+        child: const Center(
+          child: Card(
+            child: Padding(
+              padding: EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('Uploading images and creating listing...'),
+                  SizedBox(height: 8),
+                  Text(
+                    'Please wait, this may take a moment',
+                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -106,15 +156,23 @@ class _AddListingScreenState extends State<AddListingScreen> {
     );
 
     try {
+      print('🚀 Starting listing creation...');
+      print('📸 Images to upload: ${_images.length}');
+
       bool success = await listingProvider.createListing(
         ownerId: user.id,
         ownerName: user.fullName,
         ownerPhone: user.phoneNumber,
         carName: _carNameController.text.trim(),
+        brand: _brandController.text.trim(),
         model: _modelController.text.trim(),
         year: int.parse(_yearController.text),
         pricePerDay: double.parse(_priceController.text),
         engineSize: _engineSizeController.text.trim(),
+        mileage: int.parse(_mileageController.text),
+        fuelType: _fuelType,
+        transmission: _transmission,
+        description: _descriptionController.text.trim(),
         withDriver: _withDriver,
         hasInsurance: _hasInsurance,
         images: _images,
@@ -127,25 +185,15 @@ class _AddListingScreenState extends State<AddListingScreen> {
 
       if (mounted) {
         if (success) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Listing created successfully!'),
-              backgroundColor: Colors.green,
+          print('✅ Listing created successfully!');
+
+          // Navigate to success screen
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const ListingSuccessScreen(),
             ),
           );
-
-          // Clear form
-          _formKey.currentState!.reset();
-          _carNameController.clear();
-          _modelController.clear();
-          _yearController.clear();
-          _priceController.clear();
-          _engineSizeController.clear();
-          setState(() {
-            _images = [];
-            _withDriver = false;
-            _hasInsurance = false;
-          });
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -156,6 +204,8 @@ class _AddListingScreenState extends State<AddListingScreen> {
         }
       }
     } catch (e) {
+      print('❌ Error in _submitListing: $e');
+
       // Close loading dialog
       if (mounted) Navigator.pop(context);
 
@@ -191,6 +241,11 @@ class _AddListingScreenState extends State<AddListingScreen> {
                 'Car Images',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
+              const SizedBox(height: 8),
+              Text(
+                'Add 3-10 clear images of your car',
+                style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+              ),
               const SizedBox(height: 12),
 
               if (_images.isEmpty)
@@ -221,8 +276,35 @@ class _AddListingScreenState extends State<AddListingScreen> {
                       height: 120,
                       child: ListView.builder(
                         scrollDirection: Axis.horizontal,
-                        itemCount: _images.length,
+                        itemCount: _images.length + 1, // +1 for add button
                         itemBuilder: (context, index) {
+                          if (index == _images.length) {
+                            // Add more button
+                            if (_images.length < 10) {
+                              return GestureDetector(
+                                onTap: _pickImages,
+                                child: Container(
+                                  width: 120,
+                                  margin: const EdgeInsets.only(right: 12),
+                                  decoration: BoxDecoration(
+                                    border: Border.all(color: Colors.grey.shade400),
+                                    borderRadius: BorderRadius.circular(8),
+                                    color: Colors.grey.shade100,
+                                  ),
+                                  child: const Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.add, color: Colors.grey),
+                                      SizedBox(height: 4),
+                                      Text('Add More', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            }
+                            return const SizedBox.shrink();
+                          }
+
                           return Container(
                             margin: const EdgeInsets.only(right: 12),
                             child: Stack(
@@ -240,11 +322,7 @@ class _AddListingScreenState extends State<AddListingScreen> {
                                   top: 4,
                                   right: 4,
                                   child: GestureDetector(
-                                    onTap: () {
-                                      setState(() {
-                                        _images.removeAt(index);
-                                      });
-                                    },
+                                    onTap: () => _removeImage(index),
                                     child: Container(
                                       padding: const EdgeInsets.all(4),
                                       decoration: const BoxDecoration(
@@ -259,32 +337,76 @@ class _AddListingScreenState extends State<AddListingScreen> {
                                     ),
                                   ),
                                 ),
+                                // Image number badge
+                                Positioned(
+                                  bottom: 4,
+                                  left: 4,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withOpacity(0.6),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Text(
+                                      '${index + 1}',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ),
                               ],
                             ),
                           );
                         },
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    TextButton.icon(
-                      onPressed: _pickImages,
-                      icon: const Icon(Icons.add),
-                      label: const Text('Add more images'),
+                    const SizedBox(height: 8),
+                    Text(
+                      '${_images.length}/10 images added',
+                      style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                     ),
                   ],
                 ),
 
               const SizedBox(height: 24),
+              const Divider(),
+              const SizedBox(height: 24),
+
+              // Basic Information
+              const Text(
+                'Basic Information',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
 
               // Car Name
               CustomTextField(
                 controller: _carNameController,
-                label: 'Car Name / Brand',
-                hint: 'e.g., Toyota Corolla',
-                prefixIcon: Icons.directions_car,
+                label: 'Car Title',
+                hint: 'e.g., Toyota Corolla GLi 2020',
+                prefixIcon: Icons.title,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Please enter car name';
+                    return 'Please enter car title';
+                  }
+                  return null;
+                },
+              ),
+
+              const SizedBox(height: 16),
+
+              // Brand
+              CustomTextField(
+                controller: _brandController,
+                label: 'Brand',
+                hint: 'e.g., Toyota, Honda, Suzuki',
+                prefixIcon: Icons.branding_watermark,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter brand';
                   }
                   return null;
                 },
@@ -296,7 +418,7 @@ class _AddListingScreenState extends State<AddListingScreen> {
               CustomTextField(
                 controller: _modelController,
                 label: 'Model / Variant',
-                hint: 'e.g., GLi, Altis',
+                hint: 'e.g., Corolla, Civic, Alto',
                 prefixIcon: Icons.style,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -333,6 +455,134 @@ class _AddListingScreenState extends State<AddListingScreen> {
 
               const SizedBox(height: 16),
 
+              // Mileage
+              CustomTextField(
+                controller: _mileageController,
+                label: 'Mileage (KM)',
+                hint: 'e.g., 45000',
+                prefixIcon: Icons.speed,
+                keyboardType: TextInputType.number,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                ],
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter mileage';
+                  }
+                  return null;
+                },
+              ),
+
+              const SizedBox(height: 24),
+              const Divider(),
+              const SizedBox(height: 24),
+
+              // Specifications
+              const Text(
+                'Specifications',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+
+              // Engine Size
+              CustomTextField(
+                controller: _engineSizeController,
+                label: 'Engine Size',
+                hint: 'e.g., 1800cc, 1.8L, 1000cc',
+                prefixIcon: Icons.settings,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter engine size';
+                  }
+                  return null;
+                },
+              ),
+
+              const SizedBox(height: 16),
+
+              // Fuel Type Dropdown
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Fuel Type',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<String>(
+                    value: _fuelType,
+                    decoration: InputDecoration(
+                      prefixIcon: const Icon(Icons.local_gas_station),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    items: _fuelTypes.map((fuel) {
+                      return DropdownMenuItem(
+                        value: fuel,
+                        child: Text(fuel),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _fuelType = value!;
+                      });
+                    },
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 16),
+
+              // Transmission Dropdown
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Transmission',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<String>(
+                    value: _transmission,
+                    decoration: InputDecoration(
+                      prefixIcon: const Icon(Icons.settings_input_component),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    items: _transmissions.map((trans) {
+                      return DropdownMenuItem(
+                        value: trans,
+                        child: Text(trans),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _transmission = value!;
+                      });
+                    },
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 24),
+              const Divider(),
+              const SizedBox(height: 24),
+
+              // Pricing
+              const Text(
+                'Pricing & Services',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+
               // Price per Day
               CustomTextField(
                 controller: _priceController,
@@ -356,22 +606,6 @@ class _AddListingScreenState extends State<AddListingScreen> {
               ),
 
               const SizedBox(height: 16),
-
-              // Engine Size
-              CustomTextField(
-                controller: _engineSizeController,
-                label: 'Engine Size',
-                hint: 'e.g., 1800cc, 1.8L',
-                prefixIcon: Icons.speed,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter engine size';
-                  }
-                  return null;
-                },
-              ),
-
-              const SizedBox(height: 24),
 
               // With Driver Toggle
               Container(
@@ -491,6 +725,37 @@ class _AddListingScreenState extends State<AddListingScreen> {
                     ),
                   ),
                 ),
+
+              const SizedBox(height: 24),
+              const Divider(),
+              const SizedBox(height: 24),
+
+              // Description
+              const Text(
+                'Description',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+
+              TextFormField(
+                controller: _descriptionController,
+                maxLines: 5,
+                decoration: InputDecoration(
+                  hintText: 'Describe your car in detail (condition, features, special notes, etc.)',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a description';
+                  }
+                  if (value.length < 20) {
+                    return 'Description should be at least 20 characters';
+                  }
+                  return null;
+                },
+              ),
 
               const SizedBox(height: 32),
 

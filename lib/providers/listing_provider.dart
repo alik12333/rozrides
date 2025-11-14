@@ -22,10 +22,15 @@ class ListingProvider extends ChangeNotifier {
     required String ownerName,
     required String ownerPhone,
     required String carName,
+    required String brand,
     required String model,
     required int year,
     required double pricePerDay,
     required String engineSize,
+    required int mileage,
+    required String fuelType,
+    required String transmission,
+    required String description,
     required bool withDriver,
     required bool hasInsurance,
     required List<File> images,
@@ -42,10 +47,15 @@ class ListingProvider extends ChangeNotifier {
         ownerName: ownerName,
         ownerPhone: ownerPhone,
         carName: carName,
+        brand: brand,
         model: model,
         year: year,
         pricePerDay: pricePerDay,
         engineSize: engineSize,
+        mileage: mileage,
+        fuelType: fuelType,
+        transmission: transmission,
+        description: description,
         withDriver: withDriver,
         hasInsurance: hasInsurance,
         images: images,
@@ -58,6 +68,7 @@ class ListingProvider extends ChangeNotifier {
 
       // Refresh listings
       await loadMyListings(ownerId);
+      await loadAllListings();
 
       return true;
     } catch (e) {

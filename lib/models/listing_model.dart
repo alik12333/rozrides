@@ -8,10 +8,15 @@ class ListingModel {
 
   // Vehicle Details
   final String carName;
+  final String brand;
   final String model;
   final int year;
   final double pricePerDay;
   final String engineSize;
+  final int mileage; // in kilometers
+  final String fuelType; // Petrol, Diesel, Hybrid, Electric
+  final String transmission; // Manual, Automatic
+  final String description;
 
   // Service Options
   final bool withDriver;
@@ -35,10 +40,15 @@ class ListingModel {
     required this.ownerName,
     required this.ownerPhone,
     required this.carName,
+    required this.brand,
     required this.model,
     required this.year,
     required this.pricePerDay,
     required this.engineSize,
+    required this.mileage,
+    required this.fuelType,
+    required this.transmission,
+    required this.description,
     required this.withDriver,
     required this.hasInsurance,
     required this.images,
@@ -56,10 +66,15 @@ class ListingModel {
       ownerName: map['ownerName'] ?? '',
       ownerPhone: map['ownerPhone'] ?? '',
       carName: map['carName'] ?? '',
+      brand: map['brand'] ?? '',
       model: map['model'] ?? '',
       year: map['year'] ?? 2020,
       pricePerDay: (map['pricePerDay'] ?? 0).toDouble(),
       engineSize: map['engineSize'] ?? '',
+      mileage: map['mileage'] ?? 0,
+      fuelType: map['fuelType'] ?? 'Petrol',
+      transmission: map['transmission'] ?? 'Manual',
+      description: map['description'] ?? '',
       withDriver: map['withDriver'] ?? false,
       hasInsurance: map['hasInsurance'] ?? false,
       images: List<String>.from(map['images'] ?? []),
@@ -77,10 +92,15 @@ class ListingModel {
       'ownerName': ownerName,
       'ownerPhone': ownerPhone,
       'carName': carName,
+      'brand': brand,
       'model': model,
       'year': year,
       'pricePerDay': pricePerDay,
       'engineSize': engineSize,
+      'mileage': mileage,
+      'fuelType': fuelType,
+      'transmission': transmission,
+      'description': description,
       'withDriver': withDriver,
       'hasInsurance': hasInsurance,
       'images': images,

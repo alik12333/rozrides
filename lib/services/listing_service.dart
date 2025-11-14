@@ -8,15 +8,21 @@ class ListingService {
   final FirebaseStorage _storage = FirebaseStorage.instance;
 
   // Create new listing
+  // Create new listing
   Future<String> createListing({
     required String ownerId,
     required String ownerName,
     required String ownerPhone,
     required String carName,
+    required String brand,
     required String model,
     required int year,
     required double pricePerDay,
     required String engineSize,
+    required int mileage,
+    required String fuelType,
+    required String transmission,
+    required String description,
     required bool withDriver,
     required bool hasInsurance,
     required List<File> images,
@@ -30,15 +36,19 @@ class ListingService {
       final docRef = _firestore.collection('listings').doc();
       final listingId = docRef.id;
 
-      // Upload images
+      print('📋 Listing ID: $listingId');
+      print('📸 Total images to upload: ${images.length}');
+
+      // Upload ALL images
       List<String> imageUrls = [];
       for (int i = 0; i < images.length; i++) {
-        print('📸 Uploading image ${i + 1}/${images.length}');
+        print('📤 Uploading image ${i + 1}/${images.length}...');
         final url = await _uploadImage(listingId, images[i], i);
         imageUrls.add(url);
+        print('✅ Image ${i + 1} uploaded: $url');
       }
 
-      print('✅ All images uploaded');
+      print('✅ All ${imageUrls.length} images uploaded successfully');
 
       // Create listing data
       final listingData = {
@@ -46,14 +56,19 @@ class ListingService {
         'ownerName': ownerName,
         'ownerPhone': ownerPhone,
         'carName': carName,
+        'brand': brand,
         'model': model,
         'year': year,
         'pricePerDay': pricePerDay,
         'engineSize': engineSize,
+        'mileage': mileage,
+        'fuelType': fuelType,
+        'transmission': transmission,
+        'description': description,
         'withDriver': withDriver,
         'hasInsurance': hasInsurance,
         'images': imageUrls,
-        'status': 'approved', // Auto-approve for now (no admin)
+        'status': 'approved', // Auto-approve for now
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
         'city': city,
@@ -61,7 +76,7 @@ class ListingService {
       };
 
       await docRef.set(listingData);
-      print('✅ Listing created: $listingId');
+      print('✅ Listing created successfully: $listingId');
 
       return listingId;
     } catch (e) {

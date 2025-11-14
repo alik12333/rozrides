@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/listing_provider.dart';
 import '../models/listing_model.dart';
+import 'car_detail_screen.dart'; // << ADDED
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -33,7 +34,6 @@ class _HomeScreenState extends State<HomeScreen> {
           IconButton(
             icon: const Icon(Icons.search),
             onPressed: () {
-              // TODO: Implement search
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Search coming soon!')),
               );
@@ -108,9 +108,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     TextButton(
-                      onPressed: () {
-                        // TODO: View all
-                      },
+                      onPressed: () {},
                       child: const Text('View All'),
                     ),
                   ],
@@ -193,103 +191,113 @@ class _CarCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Image
-          if (listing.images.isNotEmpty)
-            ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-              child: Image.network(
-                listing.images.first,
-                height: 200,
-                width: double.infinity,
-                fit: BoxFit.cover,
+    return GestureDetector(          // << ADDED
+      onTap: () {                    // << ADDED
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => CarDetailScreen(listing: listing),
+          ),
+        );
+      },
+      child: Card(
+        margin: const EdgeInsets.only(bottom: 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Image
+            if (listing.images.isNotEmpty)
+              ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                child: Image.network(
+                  listing.images.first,
+                  height: 200,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                ),
+              ),
+
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Title
+                  Text(
+                    '${listing.carName} ${listing.model}',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+
+                  // Year and Engine
+                  Text(
+                    '${listing.year} • ${listing.engineSize}',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Price
+                  Row(
+                    children: [
+                      const Icon(Icons.payments, size: 20, color: Colors.green),
+                      const SizedBox(width: 8),
+                      Text(
+                        'PKR ${listing.pricePerDay.toStringAsFixed(0)}/day',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.green,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Features
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _FeatureChip(
+                        icon: listing.withDriver ? Icons.person : Icons.person_off,
+                        label: listing.withDriver ? 'With Driver' : 'Self Drive',
+                      ),
+                      _FeatureChip(
+                        icon: listing.hasInsurance ? Icons.shield : Icons.warning,
+                        label: listing.hasInsurance ? 'Insured' : 'No Insurance',
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Owner info
+                  Row(
+                    children: [
+                      const CircleAvatar(
+                        radius: 16,
+                        child: Icon(Icons.person, size: 18),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        listing.ownerName,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
-
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Title
-                Text(
-                  '${listing.carName} ${listing.model}',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 4),
-
-                // Year and Engine
-                Text(
-                  '${listing.year} • ${listing.engineSize}',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey.shade600,
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                // Price
-                Row(
-                  children: [
-                    const Icon(Icons.payments, size: 20, color: Colors.green),
-                    const SizedBox(width: 8),
-                    Text(
-                      'PKR ${listing.pricePerDay.toStringAsFixed(0)}/day',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.green,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-
-                // Features
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    _FeatureChip(
-                      icon: listing.withDriver ? Icons.person : Icons.person_off,
-                      label: listing.withDriver ? 'With Driver' : 'Self Drive',
-                    ),
-                    _FeatureChip(
-                      icon: listing.hasInsurance ? Icons.shield : Icons.warning,
-                      label: listing.hasInsurance ? 'Insured' : 'No Insurance',
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-
-                // Owner info
-                Row(
-                  children: [
-                    const CircleAvatar(
-                      radius: 16,
-                      child: Icon(Icons.person, size: 18),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      listing.ownerName,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
