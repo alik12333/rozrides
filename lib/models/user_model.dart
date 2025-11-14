@@ -8,6 +8,7 @@ class UserModel {
   final String? profilePhoto;
   final CNIC? cnic;
   final Location? location;
+  final Roles? roles; // NEW FIELD
 
   UserModel({
     required this.id,
@@ -17,6 +18,7 @@ class UserModel {
     this.profilePhoto,
     this.cnic,
     this.location,
+    this.roles, // NEW FIELD
   });
 
   factory UserModel.fromMap(Map<String, dynamic> map, String id) {
@@ -27,7 +29,9 @@ class UserModel {
       phoneNumber: map['phoneNumber'] ?? '',
       profilePhoto: map['profilePhoto'],
       cnic: map['cnic'] != null ? CNIC.fromMap(map['cnic']) : null,
-      location: map['location'] != null ? Location.fromMap(map['location']) : null,
+      location:
+      map['location'] != null ? Location.fromMap(map['location']) : null,
+      roles: map['roles'] != null ? Roles.fromMap(map['roles']) : Roles(isOwner: false), // NEW
     );
   }
 
@@ -39,6 +43,25 @@ class UserModel {
       'profilePhoto': profilePhoto,
       'cnic': cnic?.toMap(),
       'location': location?.toMap(),
+      'roles': roles?.toMap(), // NEW FIELD
+    };
+  }
+}
+
+class Roles {
+  final bool isOwner;
+
+  Roles({this.isOwner = false});
+
+  factory Roles.fromMap(Map<String, dynamic> map) {
+    return Roles(
+      isOwner: map['isOwner'] ?? false,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'isOwner': isOwner,
     };
   }
 }
