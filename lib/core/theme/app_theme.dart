@@ -33,13 +33,14 @@ class AppTheme {
     ),
 
     // Card Theme
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       color: cardColor,
       elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
     ),
+
 
     // Elevated Button Theme
     elevatedButtonTheme: ElevatedButtonThemeData(
