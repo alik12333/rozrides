@@ -93,9 +93,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
 
       // Text fields
-      if (_emailController.text.isNotEmpty) updates['email'] = _emailController.text.trim();
-      if (_cityController.text.isNotEmpty) updates['location.city'] = _cityController.text.trim();
-      if (_areaController.text.isNotEmpty) updates['location.area'] = _areaController.text.trim();
+      if (_emailController.text.isNotEmpty)
+        updates['email'] = _emailController.text.trim();
+      if (_cityController.text.isNotEmpty)
+        updates['location.city'] = _cityController.text.trim();
+      if (_areaController.text.isNotEmpty)
+        updates['location.area'] = _areaController.text.trim();
 
       await authProvider.updateProfile(updates);
 
@@ -120,7 +123,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final authProvider = context.watch<AuthProvider>();
     final user = authProvider.currentUser;
 
-    if (user == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    if (user == null) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(title: const Text('Profile & CNIC Verification')),
@@ -139,7 +146,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ? FileImage(_profileImage!)
                         : (user.profilePhoto != null
                         ? NetworkImage(user.profilePhoto!)
-                        : const AssetImage('assets/avatar_placeholder.png')) as ImageProvider,
+                        : const AssetImage('assets/avatar_placeholder.png'))
+                    as ImageProvider,
                   ),
                   Positioned(
                     bottom: 0,
@@ -193,6 +201,68 @@ class _ProfileScreenState extends State<ProfileScreen> {
               controller: _areaController,
               label: 'Area',
             ),
+
+            // ⭐ INSERTED OWNER TOGGLE (as requested)
+            const SizedBox(height: 24),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey.shade300),
+                borderRadius: BorderRadius.circular(8),
+                color: Colors.blue.shade50,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'I want to list my cars',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          user.roles?.isOwner == true
+                              ? 'You can now list your vehicles'
+                              : 'Enable to become a car owner',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Switch(
+                    value: user.roles?.isOwner ?? false,
+                    onChanged: (value) async {
+                      await authProvider.updateProfile({
+                        'roles.isOwner': value,
+                      });
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              value
+                                  ? 'You are now a car owner!'
+                                  : 'Owner mode disabled',
+                            ),
+                            backgroundColor:
+                            value ? Colors.green : Colors.orange,
+                          ),
+                        );
+                      }
+                    },
+                  ),
+                ],
+              ),
+            ),
+
             const SizedBox(height: 32),
             const Divider(),
             const SizedBox(height: 16),
@@ -206,16 +276,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
             // CNIC Number
             CustomTextField(
-              controller: TextEditingController(text: user.cnic?.number ?? ''),
+              controller:
+              TextEditingController(text: user.cnic?.number ?? ''),
               label: 'CNIC Number',
             ),
             const SizedBox(height: 16),
 
-            _imageUploadSection('CNIC Front', 'cnic_front', _cnicFront,
-                existingUrl: user.cnic?.frontImage),
+            _imageUploadSection(
+              'CNIC Front',
+              'cnic_front',
+              _cnicFront,
+              existingUrl: user.cnic?.frontImage,
+            ),
             const SizedBox(height: 16),
-            _imageUploadSection('CNIC Back', 'cnic_back', _cnicBack,
-                existingUrl: user.cnic?.backImage),
+
+            _imageUploadSection(
+              'CNIC Back',
+              'cnic_back',
+              _cnicBack,
+              existingUrl: user.cnic?.backImage,
+            ),
             const SizedBox(height: 16),
 
             Text(
@@ -258,9 +338,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   border: Border.all(color: Colors.grey.shade400),
                   borderRadius: BorderRadius.circular(8),
                   image: file != null
-                      ? DecorationImage(image: FileImage(file), fit: BoxFit.cover)
+                      ? DecorationImage(
+                      image: FileImage(file), fit: BoxFit.cover)
                       : (existingUrl != null
-                      ? DecorationImage(image: NetworkImage(existingUrl), fit: BoxFit.cover)
+                      ? DecorationImage(
+                    image: NetworkImage(existingUrl),
+                    fit: BoxFit.cover,
+                  )
                       : null),
                 ),
                 child: file == null && existingUrl == null
